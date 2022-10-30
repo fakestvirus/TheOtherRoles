@@ -42,7 +42,7 @@ namespace TheOtherRoles
 
         public static int optionsPage = 2;
 
-        public static ConfigEntry<string> DebugMode { get; private set; }
+        public static ConfigEntry<bool> DebugMode { get; private set; }
         public static ConfigEntry<bool> GhostsSeeTasks { get; set; }
         public static ConfigEntry<bool> GhostsSeeRoles { get; set; }
         public static ConfigEntry<bool> GhostsSeeModifier { get; set; }
@@ -92,7 +92,7 @@ namespace TheOtherRoles
 
             Helpers.checkBeta(); // Exit if running an expired beta
 
-            DebugMode = Config.Bind("Custom", "Enable Debug Mode", "false");
+            DebugMode = Config.Bind("Custom", "Enable Debug Mode", false);
             GhostsSeeTasks = Config.Bind("Custom", "Ghosts See Remaining Tasks", true);
             GhostsSeeRoles = Config.Bind("Custom", "Ghosts See Roles", true);
             GhostsSeeModifier = Config.Bind("Custom", "Ghosts See Modifier", true);
@@ -110,7 +110,7 @@ namespace TheOtherRoles
 
             UpdateRegions();
 
-            DebugMode = Config.Bind("Custom", "Enable Debug Mode", "false");
+            DebugMode = Config.Bind("Custom", "Enable Debug Mode", false);
             Harmony.PatchAll();
 
             CustomOptionHolder.Load();
@@ -153,22 +153,12 @@ namespace TheOtherRoles
     [HarmonyPatch(typeof(KeyboardJoystick), nameof(KeyboardJoystick.Update))]
     public static class DebugManager
     {
-        private static readonly string passwordHash = "d1f51dfdfd8d38027fd2ca9dfeb299399b5bdee58e6c0b3b5e9a45cd4e502848";
         private static readonly System.Random random = new System.Random((int)DateTime.Now.Ticks);
         private static List<PlayerControl> bots = new List<PlayerControl>();
 
         public static void Postfix(KeyboardJoystick __instance)
         {
-            // Check if debug mode is active.
-            StringBuilder builder = new StringBuilder();
-            SHA256 sha = SHA256Managed.Create();
-            Byte[] hashed = sha.ComputeHash(Encoding.UTF8.GetBytes(TheOtherRolesPlugin.DebugMode.Value));
-            foreach (var b in hashed) {
-                builder.Append(b.ToString("x2"));
-            }
-            string enteredHash = builder.ToString();
-            if (enteredHash != passwordHash) return;
-
+            if (!TheOtherRolesPlugin.DebugMode.Value) return;
 
             // Spawn dummys
             if (Input.GetKeyDown(KeyCode.F)) {
